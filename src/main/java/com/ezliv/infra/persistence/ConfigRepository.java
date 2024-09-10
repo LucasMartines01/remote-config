@@ -1,16 +1,15 @@
 package com.ezliv.infra.persistence;
 
+import com.ezliv.domain.exceptions.KeyAlreadyExists;
+import com.ezliv.domain.exceptions.KeyNotExists;
 import com.ezliv.domain.exceptions.ServerError;
 import com.ezliv.infra.gateways.ConfigMapper;
-import com.google.firebase.remoteconfig.Template;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.gson.reflect.TypeToken;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Repository;
-
-import javax.management.openmbean.KeyAlreadyExistsException;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -42,6 +41,9 @@ public class ConfigRepository {
                 JsonObject jsonObject = gson.fromJson(reader, JsonObject.class);
 
                 JsonObject parameters = jsonObject.getAsJsonObject("parameters");
+                if (!parameters.has(parameter)) {
+                    throw new KeyNotExists("The parameter '" + parameter + "' does not exist.");
+                }
                 JsonObject targetParameter = parameters.getAsJsonObject(parameter);
 
                 JsonObject defaultValue = targetParameter.getAsJsonObject("defaultValue");
@@ -66,7 +68,7 @@ public class ConfigRepository {
 
                 String finalKey = keys.get(keys.size() - 1);
                 if (currentMap.containsKey(finalKey)) {
-                    throw new KeyAlreadyExistsException("The key '" + finalKey + "' already exists.");
+                    throw new KeyAlreadyExists("The key '" + finalKey + "' already exists.");
                 }
                 currentMap.put(finalKey, value);
 
@@ -76,17 +78,108 @@ public class ConfigRepository {
                     gson.toJson(jsonObject, writer);
                 }
             } catch (IOException e) {
-                throw new ServerError("Error while saving configurations", e);
+                throw new ServerError("Error while saving configurations: " + e.getLocalizedMessage());
             }
         });
     }
 
+    @Async
     public CompletableFuture<Void> updateConfig(String customer, String parameter, String key, String value) {
-        return CompletableFuture.completedFuture(null);
+        return CompletableFuture.runAsync(() -> {
+            try (FileReader reader = new FileReader(jsonPath + customer + JSON_SUFFIX)) {
+                JsonObject jsonObject = gson.fromJson(reader, JsonObject.class);
+
+                JsonObject parameters = jsonObject.getAsJsonObject("parameters");
+                if (!parameters.has(parameter)) {
+                    throw new KeyNotExists("The parameter '" + parameter + "' does not exist.");
+                }
+
+                JsonObject targetParameter = parameters.getAsJsonObject(parameter);
+
+                JsonObject defaultValue = targetParameter.getAsJsonObject("defaultValue");
+
+                Type mapType = new TypeToken<Map<String, Object>>() {
+                }.getType();
+                Map<String, Object> configValues = gson.fromJson(defaultValue.get("value").getAsString(), mapType);
+
+                List<String> keys = List.of(key.split("\\."));
+
+                Map<String, Object> currentMap = configValues;
+                for (int i = 0; i < keys.size() - 1; i++) {
+                    String newKey = keys.get(i);
+                    if (currentMap.containsKey(newKey) && currentMap.get(newKey) instanceof Map) {
+                        currentMap = (Map<String, Object>) currentMap.get(newKey);
+                    } else {
+                        Map<String, Object> newMap = new HashMap<>();
+                        currentMap.put(newKey, newMap);
+                        currentMap = newMap;
+                    }
+                }
+
+                String finalKey = keys.get(keys.size() - 1);
+                if (!currentMap.containsKey(finalKey)) {
+                    throw new KeyNotExists("The key '" + finalKey + "' does not exist.");
+                }
+                currentMap.put(finalKey, value);
+
+                defaultValue.addProperty("value", gson.toJson(configValues));
+
+                try (FileWriter writer = new FileWriter(jsonPath + customer + JSON_SUFFIX)) {
+                    gson.toJson(jsonObject, writer);
+                }
+
+            } catch (IOException e) {
+                throw new ServerError("Error while updating configurations: " + e.getLocalizedMessage());
+            }
+        });
     }
 
     public CompletableFuture<Void> deleteConfig(String customer, String parameter, String key) {
-        return CompletableFuture.completedFuture(null);
+        return CompletableFuture.runAsync(() -> {
+            try (FileReader reader = new FileReader(jsonPath + customer + JSON_SUFFIX)) {
+                JsonObject jsonObject = gson.fromJson(reader, JsonObject.class);
+
+                JsonObject parameters = jsonObject.getAsJsonObject("parameters");
+                if (!parameters.has(parameter)) {
+                    throw new KeyNotExists("The parameter '" + parameter + "' does not exist.");
+                }
+
+                JsonObject targetParameter = parameters.getAsJsonObject(parameter);
+
+                JsonObject defaultValue = targetParameter.getAsJsonObject("defaultValue");
+
+                Type mapType = new TypeToken<Map<String, Object>>() {
+                }.getType();
+                Map<String, Object> configValues = gson.fromJson(defaultValue.get("value").getAsString(), mapType);
+
+                List<String> keys = List.of(key.split("\\."));
+
+                Map<String, Object> currentMap = configValues;
+                for (int i = 0; i < keys.size() - 1; i++) {
+                    String newKey = keys.get(i);
+                    if (currentMap.containsKey(newKey) && currentMap.get(newKey) instanceof Map) {
+                        currentMap = (Map<String, Object>) currentMap.get(newKey);
+                    } else {
+                        throw new KeyNotExists("The key '" + newKey + "' does not exist.");
+                    }
+                }
+
+                String finalKey = keys.get(keys.size() - 1);
+                if (!currentMap.containsKey(finalKey)) {
+                    throw new KeyNotExists("The key '" + finalKey + "' does not exist.");
+                }
+                currentMap.remove(finalKey);
+
+                defaultValue.addProperty("value", gson.toJson(configValues));
+
+                try (FileWriter writer = new FileWriter(jsonPath + customer + JSON_SUFFIX)) {
+                    gson.toJson(jsonObject, writer);
+                }
+
+            } catch (IOException e) {
+                throw new ServerError("Error while deleting configurations: " + e.getLocalizedMessage());
+            }
+        });
     }
 
     @Async
@@ -96,7 +189,7 @@ public class ConfigRepository {
                 JsonObject jsonObject = gson.fromJson(reader, JsonObject.class);
                 return configMapper.jsonToMap(jsonObject);
             } catch (Exception e) {
-                throw new ServerError("Error while reading configurations", e);
+                throw new ServerError("Error while reading configurations: " + e.getLocalizedMessage());
             }
         });
     }

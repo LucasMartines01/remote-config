@@ -4,4 +4,8 @@ public class ServerError extends RuntimeException {
     public ServerError(String message, Throwable cause) {
         super(message, cause);
     }
+
+    public ServerError(String message) {
+        super(message);
+    }
 }

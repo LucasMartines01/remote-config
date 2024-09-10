@@ -45,7 +45,7 @@ public class FirebaseConfigs {
                 throw new FirebaseException("Error while reading files from directory", e);
             }
         }
-        log.info("Initialized customers: {}", customers);
+        log.info("Initialized customers: {}", customers.stream().map(Customer::getName).toList());
         return customers;
     }
 

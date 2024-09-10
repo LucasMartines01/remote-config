@@ -1,13 +1,11 @@
 package com.ezliv.infra.gateways;
-
 import com.ezliv.application.gateways.ConfigGateway;
 import com.ezliv.domain.entities.Customer;
 import com.ezliv.domain.exceptions.KeyAlreadyExists;
+import com.ezliv.domain.exceptions.KeyNotExists;
 import com.ezliv.domain.exceptions.ServerError;
 import com.ezliv.infra.persistence.ConfigRepository;
 import com.ezliv.infra.persistence.FirebaseRepository;
-
-import javax.management.openmbean.KeyAlreadyExistsException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -25,35 +23,50 @@ public class ConfigGatewayImpl implements ConfigGateway {
 
     @Override
     public void saveConfig(List<String> customer, String parameter, String key, String value) {
-        try {
-            for (String c : getCustomersToBeSaved(customer)) {
-                configRepository.saveConfig(c, parameter, key, value).thenAcceptAsync(aVoid -> firebaseRepository.publishTemplate(c));
-            }
-        } catch (Exception e) {
-            if (e.getCause() instanceof KeyAlreadyExistsException) {
-                throw new KeyAlreadyExists("Key already exists");
-            }
-            throw new ServerError("Error while saving configuration", e);
+        for (String c : getCustomersToBeSaved(customer)) {
+            configRepository.saveConfig(c, parameter, key, value).thenAcceptAsync(aVoid -> firebaseRepository.publishTemplate(c)).exceptionally(
+                    throwable -> {
+                        if (throwable.getCause() instanceof KeyAlreadyExists) {
+                            throw new KeyAlreadyExists("Key already exists");
+                        }
+                        throw new ServerError("Error while saving configuration", throwable);
+                    }
+            ).join();
         }
+
     }
 
     @Override
     public void updateConfig(List<String> customer, String parameter, String key, String value) {
-
+        for (String c : getCustomersToBeSaved(customer)) {
+            configRepository.updateConfig(c, parameter, key, value).thenAcceptAsync(aVoid -> firebaseRepository.publishTemplate(c)).exceptionally(throwable -> {
+                if (throwable.getCause() instanceof KeyNotExists) {
+                    throw new KeyNotExists("Key not exists");
+                }
+                throw new ServerError("Error while updating configuration", throwable);
+            }).join();
+        }
     }
 
     @Override
     public void deleteConfig(List<String> customer, String parameter, String key) {
-
+        for (String c : getCustomersToBeSaved(customer)) {
+            configRepository.deleteConfig(c, parameter, key).thenAcceptAsync(aVoid -> firebaseRepository.publishTemplate(c)).exceptionally(throwable -> {
+                if (throwable.getCause() instanceof KeyNotExists) {
+                    throw new KeyNotExists("Key not exists");
+                }
+                throw new ServerError("Error while deleting configuration", throwable);
+            }).join();
+        }
     }
 
     @Override
     public Map<String, Map<String, Object>> getAllConfigs(String customer) {
-        try {
-            return configRepository.getAllConfigs(customer).join();
-        } catch (Exception e) {
-            throw new ServerError("Error while reading configurations", e);
-        }
+        return configRepository.getAllConfigs(customer).exceptionally(
+                throwable -> {
+                    throw new ServerError(throwable.getLocalizedMessage(), throwable);
+                }
+        ).join();
     }
 
     public List<String> getCustomersToBeSaved(List<String> customers) {
