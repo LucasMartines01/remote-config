@@ -5,6 +5,7 @@ import com.ezliv.domain.exceptions.FirebaseException;
 import com.google.auth.oauth2.GoogleCredentials;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -22,6 +23,7 @@ import java.util.Map;
 import java.util.stream.Stream;
 
 @Configuration
+@Slf4j
 public class FirebaseConfigs {
     @Value("${firebase.json.path}")
     private String firebasePath;
@@ -43,6 +45,7 @@ public class FirebaseConfigs {
                 throw new FirebaseException("Error while reading files from directory", e);
             }
         }
+        log.info("Initialized customers: {}", customers);
         return customers;
     }
 
@@ -56,6 +59,7 @@ public class FirebaseConfigs {
                         .build();
                 FirebaseApp.initializeApp(options, customer.getName());
                 firebaseApps.put(customer.getName(), FirebaseApp.getInstance(customer.getName()));
+                log.info("FirebaseApp initialized for customer: {}", customer.getName());
             } catch (FileNotFoundException e) {
                 throw new FirebaseException("File not found", e);
             } catch (IOException e) {
