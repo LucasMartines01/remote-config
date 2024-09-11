@@ -27,9 +27,9 @@ public class ConfigGatewayImpl implements ConfigGateway {
             configRepository.saveConfig(c, parameter, key, value).thenAcceptAsync(aVoid -> firebaseRepository.publishTemplate(c)).exceptionally(
                     throwable -> {
                         if (throwable.getCause() instanceof KeyAlreadyExists) {
-                            throw new KeyAlreadyExists("Key already exists");
+                            throw new KeyAlreadyExists(throwable.getLocalizedMessage());
                         }
-                        throw new ServerError("Error while saving configuration", throwable);
+                        throw new ServerError(throwable.getLocalizedMessage(), throwable);
                     }
             ).join();
         }
@@ -41,9 +41,9 @@ public class ConfigGatewayImpl implements ConfigGateway {
         for (String c : getCustomersToBeSaved(customer)) {
             configRepository.updateConfig(c, parameter, key, value).thenAcceptAsync(aVoid -> firebaseRepository.publishTemplate(c)).exceptionally(throwable -> {
                 if (throwable.getCause() instanceof KeyNotExists) {
-                    throw new KeyNotExists("Key not exists");
+                    throw new KeyNotExists(throwable.getLocalizedMessage());
                 }
-                throw new ServerError("Error while updating configuration", throwable);
+                throw new ServerError(throwable.getLocalizedMessage(), throwable);
             }).join();
         }
     }
@@ -53,9 +53,9 @@ public class ConfigGatewayImpl implements ConfigGateway {
         for (String c : getCustomersToBeSaved(customer)) {
             configRepository.deleteConfig(c, parameter, key).thenAcceptAsync(aVoid -> firebaseRepository.publishTemplate(c)).exceptionally(throwable -> {
                 if (throwable.getCause() instanceof KeyNotExists) {
-                    throw new KeyNotExists("Key not exists");
+                    throw new KeyNotExists(throwable.getLocalizedMessage());
                 }
-                throw new ServerError("Error while deleting configuration", throwable);
+                throw new ServerError(throwable.getLocalizedMessage(), throwable);
             }).join();
         }
     }
