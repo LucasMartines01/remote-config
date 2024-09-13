@@ -1,10 +1,7 @@
 package com.ezliv.config;
 
 import com.ezliv.application.gateways.ConfigGateway;
-import com.ezliv.application.usecases.CreateConfigUseCase;
-import com.ezliv.application.usecases.DeleteConfigUseCase;
-import com.ezliv.application.usecases.GetConfigsUseCase;
-import com.ezliv.application.usecases.UpdateConfigUseCase;
+import com.ezliv.application.usecases.*;
 import com.ezliv.domain.entities.Customer;
 import com.ezliv.infra.gateways.ConfigGatewayImpl;
 import com.ezliv.infra.persistence.ConfigRepository;
@@ -41,6 +38,11 @@ public class Dependencies {
     @Bean
     DeleteConfigUseCase deleteConfigUseCase(ConfigGateway configGateway) {
         return new DeleteConfigUseCase(configGateway);
+    }
+
+    @Bean
+    UpdateLocalConfigWithRemoteUseCase updateLocalConfigWithRemoteUseCase(ConfigGateway configGateway) {
+        return new UpdateLocalConfigWithRemoteUseCase(configGateway);
     }
 
     @Bean

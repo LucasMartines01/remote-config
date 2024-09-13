@@ -1,4 +1,5 @@
 package com.ezliv.infra.gateways;
+
 import com.ezliv.application.gateways.ConfigGateway;
 import com.ezliv.domain.entities.Customer;
 import com.ezliv.domain.exceptions.KeyAlreadyExists;
@@ -6,6 +7,7 @@ import com.ezliv.domain.exceptions.KeyNotExists;
 import com.ezliv.domain.exceptions.ServerError;
 import com.ezliv.infra.persistence.ConfigRepository;
 import com.ezliv.infra.persistence.FirebaseRepository;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -63,6 +65,15 @@ public class ConfigGatewayImpl implements ConfigGateway {
     @Override
     public Map<String, Map<String, Object>> getAllConfigs(String customer) {
         return configRepository.getAllConfigs(customer).exceptionally(
+                throwable -> {
+                    throw new ServerError(throwable.getLocalizedMessage(), throwable);
+                }
+        ).join();
+    }
+
+    @Override
+    public void updateTemplateFromRemoteConfig(String customer) {
+        firebaseRepository.updateLocalParametersWithRemoteRepository(customer).thenAcceptAsync(aVoid -> firebaseRepository.publishTemplate(customer)).exceptionally(
                 throwable -> {
                     throw new ServerError(throwable.getLocalizedMessage(), throwable);
                 }

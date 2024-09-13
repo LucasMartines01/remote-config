@@ -11,4 +11,6 @@ public interface ConfigGateway {
     public void deleteConfig(List<String> customer, String parameter, String key);
 
     public Map<String, Map<String, Object>> getAllConfigs(String customer);
+
+    public void updateTemplateFromRemoteConfig(String customer);
 }

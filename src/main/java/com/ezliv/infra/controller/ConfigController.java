@@ -1,9 +1,6 @@
 package com.ezliv.infra.controller;
 
-import com.ezliv.application.usecases.CreateConfigUseCase;
-import com.ezliv.application.usecases.DeleteConfigUseCase;
-import com.ezliv.application.usecases.GetConfigsUseCase;
-import com.ezliv.application.usecases.UpdateConfigUseCase;
+import com.ezliv.application.usecases.*;
 import com.ezliv.infra.controller.dtos.ConfigDto;
 import com.ezliv.infra.controller.dtos.DeleteConfigDto;
 import jakarta.validation.Valid;
@@ -19,17 +16,20 @@ public class ConfigController {
     private final CreateConfigUseCase createConfigUseCase;
     private final UpdateConfigUseCase updateConfigUseCase;
     private final DeleteConfigUseCase deleteConfigUseCase;
+    private final UpdateLocalConfigWithRemoteUseCase updateLocalConfigWithRemoteUseCase;
 
     public ConfigController(
             GetConfigsUseCase getConfigsUseCase,
             CreateConfigUseCase createConfigUseCase,
             UpdateConfigUseCase updateConfigUseCase,
-            DeleteConfigUseCase deleteConfigUseCase
+            DeleteConfigUseCase deleteConfigUseCase,
+            UpdateLocalConfigWithRemoteUseCase updateLocalConfigWithRemoteUseCase
     ) {
         this.getConfigsUseCase = getConfigsUseCase;
         this.createConfigUseCase = createConfigUseCase;
         this.updateConfigUseCase = updateConfigUseCase;
         this.deleteConfigUseCase = deleteConfigUseCase;
+        this.updateLocalConfigWithRemoteUseCase = updateLocalConfigWithRemoteUseCase;
     }
 
 
@@ -56,4 +56,9 @@ public class ConfigController {
         return ResponseEntity.status(200).build();
     }
 
+    @PutMapping("{customer}")
+    public ResponseEntity<Void> updateLocalConfigWithRemote(@PathVariable String customer) {
+        updateLocalConfigWithRemoteUseCase.execute(customer);
+        return ResponseEntity.status(200).build();
+    }
 }
