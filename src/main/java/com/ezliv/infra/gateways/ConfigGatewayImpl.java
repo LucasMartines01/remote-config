@@ -15,81 +15,65 @@ import java.util.Map;
 public class ConfigGatewayImpl implements ConfigGateway {
     private final ConfigRepository configRepository;
     private final FirebaseRepository firebaseRepository;
-    private final List<Customer> customers;
 
-    public ConfigGatewayImpl(ConfigRepository configRepository, FirebaseRepository firebaseRepository, List<Customer> customers) {
+    public ConfigGatewayImpl(ConfigRepository configRepository, FirebaseRepository firebaseRepository) {
         this.configRepository = configRepository;
         this.firebaseRepository = firebaseRepository;
-        this.customers = customers;
     }
 
     @Override
-    public void saveConfig(List<String> customer, String parameter, String key, String value) {
-        for (String c : getCustomersToBeSaved(customer)) {
-            configRepository.saveConfig(c, parameter, key, value).thenAcceptAsync(aVoid -> firebaseRepository.publishTemplate(c)).exceptionally(
-                    throwable -> {
-                        if (throwable.getCause() instanceof KeyAlreadyExists) {
-                            throw new KeyAlreadyExists(throwable.getLocalizedMessage());
-                        }
-                        throw new ServerError(throwable.getLocalizedMessage(), throwable);
+    public void saveConfig(String parameter, String key, String value) {
+
+        configRepository.saveConfig(parameter, key, value).thenAcceptAsync(aVoid -> firebaseRepository.publishTemplate()).exceptionally(
+                throwable -> {
+                    if (throwable.getCause() instanceof KeyAlreadyExists) {
+                        throw new KeyAlreadyExists(throwable.getLocalizedMessage());
                     }
-            ).join();
-        }
-
-    }
-
-    @Override
-    public void updateConfig(List<String> customer, String parameter, String key, String value) {
-        for (String c : getCustomersToBeSaved(customer)) {
-            configRepository.updateConfig(c, parameter, key, value).thenAcceptAsync(aVoid -> firebaseRepository.publishTemplate(c)).exceptionally(throwable -> {
-                if (throwable.getCause() instanceof KeyNotExists) {
-                    throw new KeyNotExists(throwable.getLocalizedMessage());
-                }
-                throw new ServerError(throwable.getLocalizedMessage(), throwable);
-            }).join();
-        }
-    }
-
-    @Override
-    public void deleteConfig(List<String> customer, String parameter, String key) {
-        for (String c : getCustomersToBeSaved(customer)) {
-            configRepository.deleteConfig(c, parameter, key).thenAcceptAsync(aVoid -> firebaseRepository.publishTemplate(c)).exceptionally(throwable -> {
-                if (throwable.getCause() instanceof KeyNotExists) {
-                    throw new KeyNotExists(throwable.getLocalizedMessage());
-                }
-                throw new ServerError(throwable.getLocalizedMessage(), throwable);
-            }).join();
-        }
-    }
-
-    @Override
-    public Map<String, Map<String, Object>> getAllConfigs(String customer) {
-        return configRepository.getAllConfigs(customer).exceptionally(
-                throwable -> {
                     throw new ServerError(throwable.getLocalizedMessage(), throwable);
                 }
         ).join();
+
+
     }
 
     @Override
-    public void updateTemplateFromRemoteConfig(String customer) {
-        firebaseRepository.updateLocalParametersWithRemoteRepository(customer).thenAcceptAsync(aVoid -> firebaseRepository.publishTemplate(customer)).exceptionally(
-                throwable -> {
-                    throw new ServerError(throwable.getLocalizedMessage(), throwable);
-                }
-        ).join();
-    }
+    public void updateConfig(String parameter, String key, String value) {
 
-    public List<String> getCustomersToBeSaved(List<String> customers) {
-        List<String> customersToSave = new ArrayList<>();
-
-        if (customers.contains("all")) {
-            for (Customer c : this.customers) {
-                customersToSave.add(c.getName());
+        configRepository.updateConfig(parameter, key, value).thenAcceptAsync(aVoid -> firebaseRepository.publishTemplate()).exceptionally(throwable -> {
+            if (throwable.getCause() instanceof KeyNotExists) {
+                throw new KeyNotExists(throwable.getLocalizedMessage());
             }
-        } else {
-            customersToSave.addAll(customers);
-        }
-        return customersToSave;
+            throw new ServerError(throwable.getLocalizedMessage(), throwable);
+        }).join();
+    }
+
+    @Override
+    public void deleteConfig(String parameter, String key) {
+
+        configRepository.deleteConfig(parameter, key).thenAcceptAsync(aVoid -> firebaseRepository.publishTemplate()).exceptionally(throwable -> {
+            if (throwable.getCause() instanceof KeyNotExists) {
+                throw new KeyNotExists(throwable.getLocalizedMessage());
+            }
+            throw new ServerError(throwable.getLocalizedMessage(), throwable);
+        }).join();
+
+    }
+
+    @Override
+    public Map<String, Map<String, Object>> getAllConfigs() {
+        return configRepository.getAllConfigs().exceptionally(
+                throwable -> {
+                    throw new ServerError(throwable.getLocalizedMessage(), throwable);
+                }
+        ).join();
+    }
+
+    @Override
+    public void updateTemplateFromRemoteConfig() {
+        firebaseRepository.updateLocalParametersWithRemoteRepository().thenAcceptAsync(aVoid -> firebaseRepository.publishTemplate()).exceptionally(
+                throwable -> {
+                    throw new ServerError(throwable.getLocalizedMessage(), throwable);
+                }
+        ).join();
     }
 }

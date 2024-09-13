@@ -33,32 +33,32 @@ public class ConfigController {
     }
 
 
-    @GetMapping("{customer}")
-    public ResponseEntity<Map<String, Map<String, Object>>> getConfigs(@PathVariable String customer) {
-        return ResponseEntity.status(200).body(getConfigsUseCase.execute(customer));
+    @GetMapping
+    public ResponseEntity<Map<String, Map<String, Object>>> getConfigs() {
+        return ResponseEntity.status(200).body(getConfigsUseCase.execute());
     }
 
     @PostMapping
     public ResponseEntity<Void> createConfig(@RequestBody @Valid ConfigDto configDto) {
-        createConfigUseCase.execute(configDto.customers(), configDto.parameter(), configDto.key(), configDto.value());
+        createConfigUseCase.execute(configDto.parameter(), configDto.key(), configDto.value());
         return ResponseEntity.status(201).build();
     }
 
     @PatchMapping
     public ResponseEntity<Void> updateConfig(@RequestBody @Valid ConfigDto configDto) {
-        updateConfigUseCase.execute(configDto.customers(), configDto.parameter(), configDto.key(), configDto.value());
+        updateConfigUseCase.execute(configDto.parameter(), configDto.key(), configDto.value());
         return ResponseEntity.status(200).build();
     }
 
     @DeleteMapping
     public ResponseEntity<Void> deleteConfig(@RequestBody @Valid DeleteConfigDto configDto) {
-        deleteConfigUseCase.execute(configDto.customers(), configDto.parameter(), configDto.key());
+        deleteConfigUseCase.execute(configDto.parameter(), configDto.key());
         return ResponseEntity.status(200).build();
     }
 
-    @PutMapping("{customer}")
-    public ResponseEntity<Void> updateLocalConfigWithRemote(@PathVariable String customer) {
-        updateLocalConfigWithRemoteUseCase.execute(customer);
+    @PutMapping()
+    public ResponseEntity<Void> updateLocalConfigWithRemote() {
+        updateLocalConfigWithRemoteUseCase.execute();
         return ResponseEntity.status(200).build();
     }
 }

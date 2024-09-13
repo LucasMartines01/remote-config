@@ -46,7 +46,7 @@ public class Dependencies {
     }
 
     @Bean
-    ConfigGateway configGateway(ConfigRepository configRepository, FirebaseRepository firebaseRepository, List<Customer> customers) {
-        return new ConfigGatewayImpl(configRepository, firebaseRepository, customers);
+    ConfigGateway configGateway(ConfigRepository configRepository, FirebaseRepository firebaseRepository) {
+        return new ConfigGatewayImpl(configRepository, firebaseRepository);
     }
 }

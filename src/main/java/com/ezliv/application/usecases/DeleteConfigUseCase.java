@@ -11,7 +11,7 @@ public class DeleteConfigUseCase {
         this.configGateway = configGateway;
     }
 
-    public void execute(List<String> customers, String parameter, String key) {
-        configGateway.deleteConfig(customers, parameter, key);
+    public void execute(String parameter, String key) {
+        configGateway.deleteConfig(parameter, key);
     }
 }

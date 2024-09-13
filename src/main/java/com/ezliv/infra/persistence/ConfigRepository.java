@@ -10,6 +10,7 @@ import com.google.gson.reflect.TypeToken;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Repository;
+
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -27,6 +28,8 @@ public class ConfigRepository {
     @Value("${defaults.path}")
     private String jsonPath;
     private static final String JSON_SUFFIX = ".json";
+    @Value("${customer}")
+    private String customer;
 
 
     public ConfigRepository(Gson gson, ConfigMapper configMapper) {
@@ -35,7 +38,7 @@ public class ConfigRepository {
     }
 
     @Async
-    public CompletableFuture<Void> saveConfig(String customer, String parameter, String key, String value) {
+    public CompletableFuture<Void> saveConfig(String parameter, String key, String value) {
         return CompletableFuture.runAsync(() -> {
             try (FileReader reader = new FileReader(jsonPath + customer + JSON_SUFFIX)) {
                 JsonObject jsonObject = gson.fromJson(reader, JsonObject.class);
@@ -84,7 +87,7 @@ public class ConfigRepository {
     }
 
     @Async
-    public CompletableFuture<Void> updateConfig(String customer, String parameter, String key, String value) {
+    public CompletableFuture<Void> updateConfig(String parameter, String key, String value) {
         return CompletableFuture.runAsync(() -> {
             try (FileReader reader = new FileReader(jsonPath + customer + JSON_SUFFIX)) {
                 JsonObject jsonObject = gson.fromJson(reader, JsonObject.class);
@@ -134,7 +137,7 @@ public class ConfigRepository {
         });
     }
 
-    public CompletableFuture<Void> deleteConfig(String customer, String parameter, String key) {
+    public CompletableFuture<Void> deleteConfig(String parameter, String key) {
         return CompletableFuture.runAsync(() -> {
             try (FileReader reader = new FileReader(jsonPath + customer + JSON_SUFFIX)) {
                 JsonObject jsonObject = gson.fromJson(reader, JsonObject.class);
@@ -183,7 +186,7 @@ public class ConfigRepository {
     }
 
     @Async
-    public CompletableFuture<Map<String, Map<String, Object>>> getAllConfigs(String customer) {
+    public CompletableFuture<Map<String, Map<String, Object>>> getAllConfigs() {
         return CompletableFuture.supplyAsync(() -> {
             try (FileReader reader = new FileReader(jsonPath + customer + JSON_SUFFIX)) {
                 JsonObject jsonObject = gson.fromJson(reader, JsonObject.class);

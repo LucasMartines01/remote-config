@@ -2,7 +2,6 @@ package com.ezliv.application.usecases;
 
 import com.ezliv.application.gateways.ConfigGateway;
 
-import java.util.List;
 
 public class CreateConfigUseCase {
     private final ConfigGateway configGateway;
@@ -11,7 +10,7 @@ public class CreateConfigUseCase {
         this.configGateway = configGateway;
     }
 
-    public void execute(List<String> customers, String parameter, String key, String value) {
-        configGateway.saveConfig(customers, parameter, key, value);
+    public void execute(String parameter, String key, String value) {
+        configGateway.saveConfig(parameter, key, value);
     }
 }

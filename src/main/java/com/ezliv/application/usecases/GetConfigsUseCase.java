@@ -11,7 +11,7 @@ public class GetConfigsUseCase {
         this.configGateway = configGateway;
     }
 
-    public Map<String, Map<String, Object>> execute(String customer) {
-        return configGateway.getAllConfigs(customer);
+    public Map<String, Map<String, Object>> execute() {
+        return configGateway.getAllConfigs();
     }
 }

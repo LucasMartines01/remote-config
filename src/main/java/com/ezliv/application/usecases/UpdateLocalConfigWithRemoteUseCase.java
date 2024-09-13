@@ -9,7 +9,7 @@ public class UpdateLocalConfigWithRemoteUseCase {
         this.configGateway = configGateway;
     }
 
-    public void execute(String customer) {
-        configGateway.updateTemplateFromRemoteConfig(customer);
+    public void execute() {
+        configGateway.updateTemplateFromRemoteConfig();
     }
 }

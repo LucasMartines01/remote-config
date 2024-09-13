@@ -15,7 +15,7 @@ import java.util.concurrent.CompletionException;
 @Slf4j
 public class LogsConfig {
 
-    @Around("execution(* com.ezliv.infra.gateways.*.*(..))")
+    @Around("execution(* com.ezliv.infra.gateways.ConfigGatewayImpl.*(..))")
     public Object logAllMethods(ProceedingJoinPoint joinPoint) throws Throwable {
         long startTime = System.currentTimeMillis();
         try {

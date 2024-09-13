@@ -11,7 +11,7 @@ public class UpdateConfigUseCase {
         this.configGateway = configGateway;
     }
 
-    public void execute(List<String> customers, String parameter, String key, String value) {
-        configGateway.updateConfig(customers, parameter, key, value);
+    public void execute(String parameter, String key, String value) {
+        configGateway.updateConfig(parameter, key, value);
     }
 }

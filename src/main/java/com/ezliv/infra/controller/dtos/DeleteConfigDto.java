@@ -1,11 +1,7 @@
 package com.ezliv.infra.controller.dtos;
 
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotEmpty;
-import jakarta.validation.constraints.NotNull;
 
-import java.util.List;
-
-public record DeleteConfigDto(@NotEmpty @NotNull List<String> customers, @NotBlank String parameter,
+public record DeleteConfigDto(@NotBlank String parameter,
                               @NotBlank String key) {
 }

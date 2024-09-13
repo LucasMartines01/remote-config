@@ -21,26 +21,27 @@ import java.util.concurrent.CompletableFuture;
 
 @Repository
 public class FirebaseRepository {
-    private final Map<String, FirebaseApp> firebaseApps;
+    private final FirebaseApp firebaseApp;
     private final ConfigMapper configMapper;
     private final Gson gson;
     @Value("${defaults.path}")
     private String jsonPath;
     private static final String JSON_SUFFIX = ".json";
+    @Value("${customer}")
+    private String customer;
 
-    public FirebaseRepository(Map<String, FirebaseApp> firebaseApps, ConfigMapper configMapper, Gson gson) {
-        this.firebaseApps = firebaseApps;
+    public FirebaseRepository(FirebaseApp firebaseApp, ConfigMapper configMapper, Gson gson) {
+        this.firebaseApp = firebaseApp;
         this.configMapper = configMapper;
         this.gson = gson;
     }
 
     @Async
-    public CompletableFuture<Void> publishTemplate(String customer) {
-        return CompletableFuture.runAsync(() -> {
+    public void publishTemplate() {
+        CompletableFuture.runAsync(() -> {
             try {
-                FirebaseApp firebaseApp = firebaseApps.get(customer);
                 FirebaseRemoteConfig remoteConfig = FirebaseRemoteConfig.getInstance(firebaseApp);
-                Template template = getTemplate(customer);
+                Template template = getTemplate();
                 remoteConfig.forcePublishTemplate(template);
             } catch (Exception e) {
                 throw new ServerError("Error while publishing template: ", e);
@@ -48,7 +49,7 @@ public class FirebaseRepository {
         });
     }
 
-    private Template getTemplate(String customer) {
+    private Template getTemplate() {
         try (FileReader reader = new FileReader(jsonPath + customer + JSON_SUFFIX)) {
             JsonObject jsonObject = gson.fromJson(reader, JsonObject.class);
             return configMapper.jsonToTemplate(jsonObject);
@@ -58,10 +59,9 @@ public class FirebaseRepository {
     }
 
     @Async
-    public CompletableFuture<Void> updateLocalParametersWithRemoteRepository(String customer) {
+    public CompletableFuture<Void> updateLocalParametersWithRemoteRepository() {
         return CompletableFuture.runAsync(() -> {
             try {
-                FirebaseApp firebaseApp = firebaseApps.get(customer);
                 FirebaseRemoteConfig remoteConfig = FirebaseRemoteConfig.getInstance(firebaseApp);
                 Map<String, Object> parameters = new HashMap<>();
                 parameters.put("parameters", remoteConfig.getTemplate().getParameters());

@@ -28,45 +28,23 @@ public class FirebaseConfigs {
     @Value("${firebase.json.path}")
     private String firebasePath;
 
-    @Bean
-    List<Customer> customers() {
-        List<Customer> customers = new ArrayList<>();
-        Path dirPath = Paths.get(firebasePath);
+    @Value("${customer}")
+    private String customer;
 
-        if (Files.exists(dirPath) && Files.isDirectory(dirPath)) {
-            try (Stream<Path> stream = Files.list(dirPath)) {
-                stream.filter(file -> file.getFileName().toString().endsWith(".json"))
-                        .forEach(file -> {
-                            String fileName = file.getFileName().toString();
-                            String customerName = fileName.substring(0, fileName.lastIndexOf("."));
-                            customers.add(new Customer(customerName));
-                        });
-            } catch (IOException e) {
-                throw new FirebaseException("Error while reading files from directory", e);
-            }
+
+    @Bean
+    public FirebaseApp firebaseConfig() {
+
+        try (FileInputStream serviceAccount = new FileInputStream(firebasePath + customer + ".json")) {
+            FirebaseOptions options = new FirebaseOptions.Builder()
+                    .setCredentials(GoogleCredentials.fromStream(serviceAccount))
+                    .build();
+            log.info("FirebaseApp initialized for customer: {}", customer);
+            return FirebaseApp.initializeApp(options, customer);
+        } catch (FileNotFoundException e) {
+            throw new FirebaseException("File not found", e);
+        } catch (IOException e) {
+            throw new FirebaseException("Error while reading file", e);
         }
-        log.info("Initialized customers: {}", customers.stream().map(Customer::getName).toList());
-        return customers;
     }
-
-    @Bean
-    public Map<String, FirebaseApp> firebaseConfig(List<Customer> customers) {
-        Map<String, FirebaseApp> firebaseApps = new HashMap<>();
-        customers.forEach(customer -> {
-            try (FileInputStream serviceAccount = new FileInputStream(firebasePath + "/" + customer.getName() + ".json")) {
-                FirebaseOptions options = new FirebaseOptions.Builder()
-                        .setCredentials(GoogleCredentials.fromStream(serviceAccount))
-                        .build();
-                FirebaseApp.initializeApp(options, customer.getName());
-                firebaseApps.put(customer.getName(), FirebaseApp.getInstance(customer.getName()));
-                log.info("FirebaseApp initialized for customer: {}", customer.getName());
-            } catch (FileNotFoundException e) {
-                throw new FirebaseException("File not found", e);
-            } catch (IOException e) {
-                throw new FirebaseException("Error while reading file", e);
-            }
-        });
-        return firebaseApps;
-    }
-
 }
